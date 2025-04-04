@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Usuarios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 40px;
+        }
+        .registration-card {
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .form-header {
+            background-color: #4e73df;
+            color: white;
+            border-radius: 8px 8px 0 0;
+            padding: 15px;
+        }
+        .form-footer {
+            background-color: #f8f9fa;
+            border-radius: 0 0 8px 8px;
+            padding: 15px;
+            text-align: right;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="registration-card">
+            <div class="form-header">
+                <h4 class="mb-0">Registro de Nuevo Usuario</h4>
+            </div>
+            <div class="card-body">
+                <form id="registrationForm">
+                    <div class="mb-3">
+                        <label for="identificacion" class="form-label">Identificación</label>
+                        <input type="number" class="form-control" id="identificacion" required>
+                        <div id="identificacionError" class="error-message"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="nombre_usuario" class="form-label">Nombre Completo</label>
+                        <input type="text" class="form-control" id="nombre_usuario" required>
+                        <div id="nombreError" class="error-message"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required>
+                        <div id="emailError" class="error-message"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="clave" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="clave" required>
+                        <div id="claveError" class="error-message"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirmarClave" class="form-label">Confirmar Contraseña</label>
+                        <input type="password" class="form-control" id="confirmarClave" required>
+                        <div id="confirmarClaveError" class="error-message"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="rol" class="form-label">Tipo de Usuario</label>
+                        <select class="form-select" id="rol" required>
+                            <option value="" selected disabled>Seleccione un rol</option>
+                            <option value="normal">Usuario Normal</option>
+                            <option value="administrador">Administrador</option>
+                            <option value="superadministrador">Super Administrador</option>
+                        </select>
+                        <div id="rolError" class="error-message"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="form-footer">
+                <button type="button" class="btn btn-secondary me-2" id="btnLimpiar">Limpiar</button>
+                <button type="button" class="btn btn-primary" id="btnRegistrar">Registrar Usuario</button>
+            </div>
+        </div>
+        
+        <!-- Modal de éxito -->
+        <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">Registro Exitoso</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>El usuario ha sido registrado correctamente.</p>
+                        <div id="userDetails"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Aceptar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal de error -->
+        <div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">Error en el Registro</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="errorModalBody">
+                        <!-- Mensaje de error se insertará aquí -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Aceptar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('registrationForm');
+            const btnRegistrar = document.getElementById('btnRegistrar');
+            const btnLimpiar = document.getElementById('btnLimpiar');
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+            
+            // Configuración de Supabase
+            const SUPABASE_URL = 'https://klquqxgqjirudalekaaf.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtscXVxeGdxamlydWRhbGVrYWFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NDAyMjIsImV4cCI6MjA1ODUxNjIyMn0.f4ao_rY-nk-vVC5Up0uaql3WKJjGYlxHc3IcweP-PYQ';
+            
+            // Función para limpiar el formulario
+            function limpiarFormulario() {
+                form.reset();
+                // Limpiar mensajes de error
+                document.querySelectorAll('.error-message').forEach(el => {
+                    el.textContent = '';
+                });
+            }
+            
+            // Función para validar el formulario
+            function validarFormulario() {
+                let isValid = true;
+                
+                // Validar identificación
+                const identificacion = document.getElementById('identificacion').value;
+                if (!identificacion || isNaN(identificacion)) {
+                    document.getElementById('identificacionError').textContent = 'Por favor ingrese una identificación válida';
+                    isValid = false;
+                } else {
+                    document.getElementById('identificacionError').textContent = '';
+                }
+                
+                // Validar nombre
+                const nombre = document.getElementById('nombre_usuario').value;
+                if (!nombre) {
+                    document.getElementById('nombreError').textContent = 'Por favor ingrese un nombre';
+                    isValid = false;
+                } else {
+                    document.getElementById('nombreError').textContent = '';
+                }
+                
+                // Validar email
+                const email = document.getElementById('email').value;
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!email || !emailRegex.test(email)) {
+                    document.getElementById('emailError').textContent = 'Por favor ingrese un email válido';
+                    isValid = false;
+                } else {
+                    document.getElementById('emailError').textContent = '';
+                }
+                
+                // Validar contraseña
+                const clave = document.getElementById('clave').value;
+                if (!clave || clave.length < 6) {
+                    document.getElementById('claveError').textContent = 'La contraseña debe tener al menos 6 caracteres';
+                    isValid = false;
+                } else {
+                    document.getElementById('claveError').textContent = '';
+                }
+                
+                // Validar confirmación de contraseña
+                const confirmarClave = document.getElementById('confirmarClave').value;
+                if (clave !== confirmarClave) {
+                    document.getElementById('confirmarClaveError').textContent = 'Las contraseñas no coinciden';
+                    isValid = false;
+                } else {
+                    document.getElementById('confirmarClaveError').textContent = '';
+                }
+                
+                // Validar rol
+                const rol = document.getElementById('rol').value;
+                if (!rol) {
+                    document.getElementById('rolError').textContent = 'Por favor seleccione un rol';
+                    isValid = false;
+                } else {
+                    document.getElementById('rolError').textContent = '';
+                }
+                
+                return isValid;
+            }
+            
+            // Función para registrar usuario
+            async function registrarUsuario() {
+                if (!validarFormulario()) {
+                    return;
+                }
+                
+                const usuario = {
+                    identificacion: parseInt(document.getElementById('identificacion').value),
+                    nombre_usuario: document.getElementById('nombre_usuario').value,
+                    clave_encriptada: document.getElementById('clave').value, // En una aplicación real, esto debería encriptarse
+                    email: document.getElementById('email').value,
+                    usuario_normal: 0,
+                    usuario_administrador: 0,
+                    usuario_superadministrador: 0
+                };
+                
+                // Establecer el rol seleccionado
+                const rol = document.getElementById('rol').value;
+                if (rol === 'normal') {
+                    usuario.usuario_normal = 1;
+                } else if (rol === 'administrador') {
+                    usuario.usuario_administrador = 1;
+                } else if (rol === 'superadministrador') {
+                    usuario.usuario_superadministrador = 1;
+                }
+                
+                try {
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/usuarios`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=representation'
+                        },
+                        body: JSON.stringify([usuario]) // Enviamos como array para coincidir con el backend
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Error al registrar el usuario');
+                    }
+                    
+                    const usuarioInsertado = (await response.json())[0];
+                    
+                    // Mostrar modal de éxito
+                    const userDetails = document.getElementById('userDetails');
+                    userDetails.innerHTML = `
+                        <p><strong>ID:</strong> ${usuarioInsertado.id_usuario}</p>
+                        <p><strong>Nombre:</strong> ${usuarioInsertado.nombre_usuario}</p>
+                        <p><strong>Email:</strong> ${usuarioInsertado.email}</p>
+                        <p><strong>Tipo:</strong> ${usuarioInsertado.usuario_superadministrador ? 'Super Admin' : 
+                            usuarioInsertado.usuario_administrador ? 'Administrador' : 'Usuario Normal'}</p>
+                    `;
+                    
+                    successModal.show();
+                    limpiarFormulario();
+                } catch (error) {
+                    // Mostrar modal de error
+                    document.getElementById('errorModalBody').textContent = error.message;
+                    errorModal.show();
+                    console.error('Error al registrar usuario:', error);
+                }
+            }
+            
+            // Event listeners
+            btnRegistrar.addEventListener('click', registrarUsuario);
+            btnLimpiar.addEventListener('click', limpiarFormulario);
+            
+            // También se puede enviar el formulario con Enter
+            form.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    registrarUsuario();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
